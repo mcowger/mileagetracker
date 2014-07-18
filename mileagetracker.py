@@ -87,7 +87,7 @@ def get_all_data_from_sparkfun():
     prediction = predict_linear(
         [float(datapoint['orig_timestamp']) for datapoint in data],
         [float(datapoint['ODOMETER']) for datapoint in data],
-        (365 * 86400) + time.time()
+        (365 * 86400) + time.mktime(datetime.date(2014,6,21).timetuple())
     )
     overage_cost = max(0,int((prediction - 15000) * .20))
     line_chart.title = "odometer over time \n prediction: %s \n overage cost $%s" % (int(prediction),overage_cost)
