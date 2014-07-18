@@ -81,7 +81,7 @@ def get_all_data_from_sparkfun():
         pretty_print=True,
         width=800,
         print_values=False,
-        disable_xml_declaration=True
+        disable_xml_declaration=False
     )
 
     prediction = predict_linear(
@@ -89,7 +89,7 @@ def get_all_data_from_sparkfun():
         [float(datapoint['ODOMETER']) for datapoint in data],
         (365 * 86400) + time.time()
     )
-    overage_cost = int((prediction - 15000) * .20)
+    overage_cost = max(0,int((prediction - 15000) * .20))
     line_chart.title = "odometer over time \n prediction: %s \n overage cost $%s" % (int(prediction),overage_cost)
 
     dates = []
@@ -110,9 +110,9 @@ def get_all_data_from_sparkfun():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    #to_post = get_current_data_from_ford()
-    #push = push_to_sparkfun(to_post)
-    #logging.info(push.url)
+    to_post = get_current_data_from_ford()
+    push = push_to_sparkfun(to_post)
+    logging.info(push.url)
     get_all_data_from_sparkfun()
 
 
