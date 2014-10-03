@@ -8,6 +8,7 @@ import datetime
 
 from pprint import pformat,pprint
 from options import login_data, headers, ford_url, add_data_url, private_key, get_data_url, filename
+from flask import Flask
 
 def km_to_miles(km):
     return int(float(km) * 0.621371)
@@ -106,13 +107,24 @@ def get_all_data_from_sparkfun():
     line_chart.add("Odometer",dates)
 
 
-    line_chart.render_to_file(filename)
+    return line_chart.render()
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
+#     logging.basicConfig(level=logging.INFO)
+#     to_post = get_current_data_from_ford()
+#     push = push_to_sparkfun(to_post)
+#     logging.info(push.url)
+#     get_all_data_from_sparkfun()
+
+
+
+app = Flask(__name__)
+
+@app.route('/')
+def root():
     logging.basicConfig(level=logging.INFO)
     to_post = get_current_data_from_ford()
     push = push_to_sparkfun(to_post)
     logging.info(push.url)
-    get_all_data_from_sparkfun()
-
-
+    svg = get_all_data_from_sparkfun()
+    return svg
