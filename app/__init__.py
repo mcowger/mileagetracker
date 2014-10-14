@@ -107,7 +107,7 @@ def get_all_data_from_sparkfun():
     line_chart.add("Odometer",dates)
 
 
-    return line_chart.render()
+    return line_chart.render_to_file('/srv/wordpress/mileage.svg')
 
 # if __name__ == "__main__":
 #     logging.basicConfig(level=logging.INFO)
@@ -118,13 +118,8 @@ def get_all_data_from_sparkfun():
 
 
 
-app = Flask(__name__)
-
-@app.route('/')
-def root():
-    logging.basicConfig(level=logging.INFO)
-    to_post = get_current_data_from_ford()
-    push = push_to_sparkfun(to_post)
-    logging.info(push.url)
-    svg = get_all_data_from_sparkfun()
-    return svg
+logging.basicConfig(level=logging.INFO)
+to_post = get_current_data_from_ford()
+push = push_to_sparkfun(to_post)
+logging.info(push.url)
+get_all_data_from_sparkfun()
