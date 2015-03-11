@@ -5,15 +5,18 @@ import time
 import logging
 import pygal
 import datetime
+import boto
+from boto.s3.key import Key
 
 from pprint import pformat,pprint
-from options import login_data, headers, ford_url, add_data_url, private_key, get_data_url, filename
-from flask import Flask
+from options import *
+
 
 def km_to_miles(km):
     return int(float(km) * 0.621371)
 
 def get_current_data_from_ford():
+
     response = requests.post(ford_url,data=json.dumps(login_data),headers=headers)
 
     data = response.json()['response']
@@ -29,7 +32,8 @@ def get_current_data_from_ford():
     return to_post
 
 def push_to_sparkfun(data):
-    push = requests.get(add_data_url,params=data)
+    push_headers = {'Phant-Private-Key': private_key}
+    push = requests.get(add_data_url,params=data,headers=push_headers)
     return push
 
 def linreg(X, Y):
@@ -39,18 +43,18 @@ def linreg(X, Y):
     N = len(X)
     Sx = Sy = Sxx = Syy = Sxy = 0.0
     for x, y in map(None, X, Y):
-	Sx = Sx + x
-	Sy = Sy + y
-	Sxx = Sxx + x*x
-	Syy = Syy + y*y
-	Sxy = Sxy + x*y
+        Sx = Sx + x
+        Sy = Sy + y
+        Sxx = Sxx + x*x
+        Syy = Syy + y*y
+        Sxy = Sxy + x*y
     det = Sxx * N - Sx * Sx
     a, b = (Sxy * N - Sy * Sx)/det, (Sxx * Sy - Sx * Sxy)/det
 
     meanerror = residual = 0.0
     for x, y in map(None, X, Y):
-	meanerror = meanerror + (y - Sy/N)**2
-	residual = residual + (y - a * x - b)**2
+        meanerror = meanerror + (y - Sy/N)**2
+        residual = residual + (y - a * x - b)**2
     RR = 1 - residual/meanerror
     ss = residual / (N-2)
     Var_a, Var_b = ss * N / det, ss * Sxx / det
@@ -107,7 +111,16 @@ def get_all_data_from_sparkfun():
     line_chart.add("Odometer",dates)
 
 
-    return line_chart.render_to_file('/srv/wordpress/mileage.svg')
+    return line_chart.render()
+
+def save_to_s3(filename,data):
+    s3conn = boto.connect_s3(s3_akia, s3_secret) #set up an S3 style connections
+    bucket = s3conn.get_bucket(s3_bucket)
+    k = Key(bucket)
+    k.key = filename
+    k.set_contents_from_string(data)
+    k.content_type = 'image/svg+xml'
+    return k
 
 # if __name__ == "__main__":
 #     logging.basicConfig(level=logging.INFO)
@@ -117,9 +130,12 @@ def get_all_data_from_sparkfun():
 #     get_all_data_from_sparkfun()
 
 
-
-logging.basicConfig(level=logging.INFO)
-to_post = get_current_data_from_ford()
-push = push_to_sparkfun(to_post)
-logging.info(push.url)
-get_all_data_from_sparkfun()
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("requests.packages.urllib3.connectionpool").setLevel(logging.WARN)
+    while True:
+        to_post = get_current_data_from_ford()
+        push = push_to_sparkfun(to_post)
+        data = get_all_data_from_sparkfun()
+        save_to_s3(filename,data)
+        time.sleep(60*60)
