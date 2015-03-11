@@ -1,5 +1,4 @@
 lxml
 pygal==1.5.1
 requests
-wsgiref
 boto

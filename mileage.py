@@ -118,8 +118,11 @@ def save_to_s3(filename,data):
     bucket = s3conn.get_bucket(s3_bucket)
     k = Key(bucket)
     k.key = filename
-    k.set_contents_from_string(data)
     k.content_type = 'image/svg+xml'
+    k.set_metadata('Content-Type', 'image/svg+xml')
+
+    k.set_contents_from_string(data)
+    k.set_acl('public-read')
     return k
 
 # if __name__ == "__main__":
@@ -137,5 +140,6 @@ if __name__ == '__main__':
         to_post = get_current_data_from_ford()
         push = push_to_sparkfun(to_post)
         data = get_all_data_from_sparkfun()
-        save_to_s3(filename,data)
+        key = save_to_s3(filename,data)
+        logging.info(key)
         time.sleep(60*60)
